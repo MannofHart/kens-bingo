@@ -10,7 +10,6 @@
 import pygame
 from pygame.locals import *
 import random
-import threading, time
 
 # Initialize the game engine
 pygame.init()
@@ -359,7 +358,4 @@ while not done:
     clock.tick(60)
 
 # Be IDLE friendly
-# timing = threading.Timer(3, evt)
-# timing.start()
-# pygame.register_quit(stop_loop)
 pygame.quit()
