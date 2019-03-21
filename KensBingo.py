@@ -21,7 +21,7 @@ BLUE = (135, 206, 235)
 RED = (255, 0, 0)
 
 # Default screen size
-display_width = 640
+display_width = 840
 display_height = 480
 
 # Used to define which screen is displayed
@@ -41,9 +41,7 @@ number = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
           40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
           50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
           60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
-          70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-          80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
-          90]
+          70, 71, 72, 73, 74, 75]
 
 # Used by calls checker screen
 checks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -53,9 +51,9 @@ checks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
           40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
           50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
           60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
-          70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-          80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
-          90]
+          70, 71, 72, 73, 74, 75]
+
+bingo_array = ['B', 'I', 'N', 'G', 'O']
 
 # Ditty displayed under number
 ditty = ['P=Pause C=Check R=Reset Spacebar=Start Game.',
@@ -160,7 +158,7 @@ def reset_game():
     global should_stop
 
     # set arrays to zero's
-    for i in range(0, 91):
+    for i in range(0, 76):
         checks[i] = 0
         number[i] = 0
 
@@ -170,13 +168,13 @@ def reset_game():
     should_stop = False
 
     while True:
-        x = random.randint(1, 90)
-        for i in range(1, 91):
+        x = random.randint(1, 75)
+        for i in range(1, 76):
             if (number[i] == x):
                 break
             if (number[i] == 0):
                 number[i] = x
-                if (i == 90):
+                if (i == 75):
                     return
                 break
 
@@ -196,11 +194,9 @@ pygame.time.set_timer(pygame.USEREVENT, 1000)
 reset_game()
 
 def stop_loop():
-    should_stop = True
+    global should_stop
 
-def evt():
-    while not should_stop:
-        print 'in thing'
+    should_stop = True
 
 # Loop as long as done == False
 while not done:
@@ -233,7 +229,7 @@ while not done:
         if event.type == KEYDOWN and event.key == pygame.K_SPACE:
             # Get next number
             mode = 0
-            if (calls < 90):
+            if (calls < 75):
                 calls = calls + 1
                 checks[number[calls]] = number[calls]
         elif event.type == KEYDOWN and event.key == pygame.K_p:
@@ -277,8 +273,21 @@ while not done:
         # Display called number very big
         # Select the font to use, size, bold, italics
         font = pygame.font.SysFont('Arial', int(display_height / 10 * 7.5), True, False)
+        number_letter = 'N/A'
+
+        if number[calls] in range(1, 16):
+            number_letter = 'B'
+        elif number[calls] in range(16, 31):
+            number_letter = 'I'
+        elif number[calls] in range(31, 46):
+            number_letter = 'N'
+        elif number[calls] in range(46, 61):
+            number_letter = 'G'
+        elif number[calls] in range(61, 75):
+            number_letter = '0'
+
         # Get the text
-        text = "%d" % (number[calls])
+        text = "%s %d" % (number_letter, (number[calls]))
         # Get the rectangle size
         TextSurface = font.render(text, True, BLACK)
         TextRect = TextSurface.get_rect()
@@ -293,8 +302,17 @@ while not done:
         font = pygame.font.SysFont('Arial', int(display_height / 12), True, False)
         # Get the text
         i = 0
-        for r in range(1, 10):
-            for c in range(1, 11):
+        for r in range(1, 6):
+            # Get the rectangle size
+            TextSurface = font.render(bingo_array[r-1], True, BLACK)
+            TextRect = TextSurface.get_rect()
+            # Display result
+            TextRect.center = ((display_width / 18 * 0) + display_width / 33,
+                               (display_height / 50 * 6) + (r * display_height / 14) - display_height / 14)
+            # Put the image of the text on the screen
+            screen.blit(TextSurface, TextRect)
+
+            for c in range(1, 16):
                 i = i + 1
                 # Default
                 text = "-"
@@ -304,7 +322,7 @@ while not done:
                 TextSurface = font.render(text, True, BLACK)
                 TextRect = TextSurface.get_rect()
                 # Display result
-                TextRect.center = ((display_width / 12 * c) + display_width / 22,
+                TextRect.center = ((display_width / 18 * c) + display_width / 33,
                                    (display_height / 50 * 6) + (r * display_height / 14) - display_height / 14)
                 # Put the image of the text on the screen
                 screen.blit(TextSurface, TextRect)
