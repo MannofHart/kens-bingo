@@ -29,9 +29,9 @@ mode = 0
 # Counter that increments with each call
 calls = 0
 
-should_stop = False
+should_stop = True
+game_started = False
 auto_play_countdown = 5
-auto_play_screen = 0
 
 # Place for randomly generated numbers
 number = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -56,7 +56,7 @@ checks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
 bingo_array = ['B', 'I', 'N', 'G', 'O']
 
 # Ditty displayed under number
-ditty = ['P=Pause C=Check R=Reset Spacebar=Start Game.',
+ditty = ['C=Check R=Reset Spacebar=Start/Pause Game.',
          'Kellys eye its number one.',
          'One little duck its number two.',
          'One little flea its number three.',
@@ -154,8 +154,8 @@ def reset_game():
     global calls
     global number
     global auto_play_countdown
-    global auto_play_screen
     global should_stop
+    global game_started
 
     # set arrays to zero's
     for i in range(0, 76):
@@ -164,8 +164,8 @@ def reset_game():
 
     calls = 0
     auto_play_countdown = 5
-    auto_play_screen = 1
-    should_stop = False
+    should_stop = True
+    game_started = False
 
     while True:
         x = random.randint(1, 75)
@@ -205,7 +205,7 @@ while not done:
         if event.type == pygame.QUIT:  # If user clicked close
             done = True  # Flag that we are done so we exit this loop
 
-        if event.type == pygame.USEREVENT:
+        if event.type == pygame.USEREVENT and 'key' not in event.dict:
             if should_stop or mode == 2:
                 continue
 
@@ -213,34 +213,44 @@ while not done:
             if auto_play_countdown < 0:
                 auto_play_countdown = 5
 
-                if auto_play_screen == 0:
-                    auto_play_screen = 1
-                    pygame.event.post(pygame.event.Event(KEYDOWN, key=pygame.K_SPACE))
+                if mode == 1:
+                    mode = 0
+                    pygame.event.post(pygame.event.Event(USEREVENT, key=pygame.K_SPACE))
                 else:
-                    auto_play_screen = 0
-                    pygame.event.post(pygame.event.Event(KEYDOWN, key=pygame.K_c))
+                    mode = 1
+                    pygame.event.post(pygame.event.Event(USEREVENT, key=pygame.K_c))
 
         if event.type == VIDEORESIZE:
             # The main code that resizes the window:
             # (recreate the window with the new size)
             screen = pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
             pygame.display.flip()
+        elif event.type == KEYDOWN and event.key == pygame.K_SPACE:
+            if not game_started:
+                game_started = True
+                pygame.event.post(pygame.event.Event(USEREVENT, key=pygame.K_c))
+                mode = 1
 
-        if event.type == KEYDOWN and event.key == pygame.K_SPACE:
+            # start and stop
+            should_stop = not should_stop
+        elif event.type == USEREVENT and 'key' in event.dict and event.dict['key'] == pygame.K_SPACE:
             # Get next number
             mode = 0
             if (calls < 75):
                 calls = calls + 1
                 checks[number[calls]] = number[calls]
+
         elif event.type == KEYDOWN and event.key == pygame.K_p:
             # Get previous number
             should_stop = not should_stop
+        elif event.type == USEREVENT and 'key' in event.dict and event.dict['key'] == pygame.K_c:
+            mode = 1
         elif event.type == KEYDOWN and event.key == pygame.K_c:
-            # Display check screen
-            if (mode == 0):
+            if mode == 1:
+                continue
+            else:
+                should_stop = True
                 mode = 1
-            elif (mode == 1):
-                mode = 0
         elif event.type == KEYDOWN and event.key == pygame.K_n:
             # Reset game abort
             if (mode == 2):
@@ -271,28 +281,39 @@ while not done:
 
     if (mode == 0):
         # Display called number very big
+        text = ""
+        text_center = (0,0)
+        text_size = 0
+
+        if calls == 0 and not game_started:
+            text = "Ready to play?"
+            text_center = ((display_width / 2), (display_height / 10 * 4))
+            text_size = int(display_height / 10 * 2)
+        elif calls != 0:
+            number_letter = 'N/A'
+
+            if number[calls] in range(1, 16):
+                number_letter = 'B'
+            elif number[calls] in range(16, 31):
+                number_letter = 'I'
+            elif number[calls] in range(31, 46):
+                number_letter = 'N'
+            elif number[calls] in range(46, 61):
+                number_letter = 'G'
+            elif number[calls] in range(61, 75):
+                number_letter = '0'
+            # Get the text
+            text = "%s %d" % (number_letter, (number[calls]))
+            text_center = ((display_width / 2), (display_height / 10 * 4))
+            text_size = int(display_height / 10 * 7.5)
+
         # Select the font to use, size, bold, italics
-        font = pygame.font.SysFont('Arial', int(display_height / 10 * 7.5), True, False)
-        number_letter = 'N/A'
-
-        if number[calls] in range(1, 16):
-            number_letter = 'B'
-        elif number[calls] in range(16, 31):
-            number_letter = 'I'
-        elif number[calls] in range(31, 46):
-            number_letter = 'N'
-        elif number[calls] in range(46, 61):
-            number_letter = 'G'
-        elif number[calls] in range(61, 75):
-            number_letter = '0'
-
-        # Get the text
-        text = "%s %d" % (number_letter, (number[calls]))
+        font = pygame.font.SysFont('Arial', text_size, True, False)
         # Get the rectangle size
         TextSurface = font.render(text, True, BLACK)
         TextRect = TextSurface.get_rect()
         # Display result
-        TextRect.center = ((display_width / 2), (display_height / 10 * 4))
+        TextRect.center = text_center
         # Put the image of the text on the screen
         screen.blit(TextSurface, TextRect)
 
@@ -338,6 +359,20 @@ while not done:
         TextRect = TextSurface.get_rect()
         # Display result
         TextRect.center = ((display_width / 2), (display_height / 3))
+        # Put the image of the text on the screen
+        screen.blit(TextSurface, TextRect)
+
+    if should_stop and game_started:
+        # Ask if you are sure you want to do a reset
+        # Select the font to use, size, bold, italics
+        font = pygame.font.SysFont('Arial', int(32), True, False)
+        # Get the text
+        text = "Paused"
+        # Get the rectangle size
+        TextSurface = font.render(text, True, RED)
+        TextRect = TextSurface.get_rect()
+        # Display result
+        TextRect.center = (TextSurface.get_width(), TextSurface.get_height() + 5)
         # Put the image of the text on the screen
         screen.blit(TextSurface, TextRect)
 
